@@ -1,0 +1,118 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nomor Terbaru</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    </link>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center h-screen bg-gray-100">
+    <div class="text-center">
+        <div id="loading" class="text-xl text-gray-600">Memuat nomor...</div>
+        <div id="error" class="text-xl text-red-600"></div>
+        <div id="title" class="text-4xl font-bold mb-4 hidden">AS Steam</div>
+        <div id="queueLabel" class="text-2xl font-semibold mb-4 hidden">Jumlah Antrian</div>
+        <div id="latestNumber" class="text-5xl font-bold bg-white p-10 rounded-lg shadow-lg hidden"></div>
+        <div id="note" class="text-lg text-gray-700 mt-4 hidden">Catatan: halaman ini akan ter Refresh otomatis setiap 3
+            detik atau tekan tombol Refresh untuk menampilkan data terbaru :)</div>
+        <button id="refreshButton"
+            class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-700 hidden">Refresh</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script>
+        // Konfigurasi Supabase
+        const supabaseUrl = 'https://rfkivmxezjerwwusfbji.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJma2l2bXhlemplcnd3dXNmYmppIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTgwOTI0MjEsImV4cCI6MjAzMzY2ODQyMX0.sJw9DmLLtpmSgS_7j4YYAXn6ZidAqSAhEy2J6FSYTs0';
+
+        // Inisialisasi Supabase client
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // Fungsi untuk mengambil nomor terbaru
+        async function fetchLatestNumber() {
+            const loadingElement = document.getElementById('loading');
+            const errorElement = document.getElementById('error');
+            const titleElement = document.getElementById('title');
+            const latestNumberElement = document.getElementById('latestNumber');
+            const queueLabelElement = document.getElementById('queueLabel');
+            const noteElement = document.getElementById('note');
+            const refreshButtonElement = document.getElementById('refreshButton');
+
+            try {
+                // Sembunyikan error sebelumnya
+                errorElement.textContent = '';
+
+                // Ambil data terbaru dari Supabase
+                const { data, error } = await supabase
+                    .from('numbers')
+                    .select('number_value')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                // Tampilkan pesan loading
+                loadingElement.style.display = 'block';
+                titleElement.style.display = 'none';
+                latestNumberElement.style.display = 'none';
+                queueLabelElement.style.display = 'none';
+                noteElement.style.display = 'none';
+                refreshButtonElement.style.display = 'none';
+
+                // Cek apakah ada error
+                if (error) {
+                    throw error;
+                }
+
+                // Jika tidak ada data
+                if (!data) {
+                    errorElement.textContent = 'Tidak ada nomor ditemukan';
+                    return;
+                }
+
+                // Tampilkan nomor terbaru
+                latestNumberElement.textContent = data.number_value;
+
+                // Sembunyikan loading, tampilkan nomor, label, catatan, dan tombol refresh
+                loadingElement.style.display = 'none';
+                titleElement.style.display = 'block';
+                latestNumberElement.style.display = 'block';
+                queueLabelElement.style.display = 'block';
+                noteElement.style.display = 'block';
+                refreshButtonElement.style.display = 'block';
+
+            } catch (error) {
+                // Tangani error
+                console.error('Error fetching data:', error);
+                errorElement.textContent = `Gagal memuat nomor: ${error.message}`;
+                loadingElement.style.display = 'none';
+            }
+        }
+
+        // Fungsi untuk refresh data secara berkala
+        function startPeriodicRefresh() {
+            // Refresh setiap 3 detik
+            setInterval(fetchLatestNumber, 3000);
+        }
+
+        // Panggil fungsi saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchLatestNumber();
+            startPeriodicRefresh();
+        });
+
+        // Tambahkan event listener untuk tombol refresh
+        document.getElementById('refreshButton').addEventListener('click', () => {
+            fetchLatestNumber();
+        });
+    </script>
+</body>
+
+</html>
